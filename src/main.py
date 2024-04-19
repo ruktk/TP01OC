@@ -11,60 +11,19 @@ instrucoes = {
     "beq": {"type": "SB", "opcode": "1100011", "funct3": "000"}
 }
 
-
-# Função para traduzir uma instrução assembly para linguagem de máquina RISC-V
-""" def traduzir_instrucao(instrucao):
-    print("inicio funcao instrucao")
-    partes = instrucao.split()
-    opcode = instrucoes[partes[0]]["opcode"]
-    if instrucoes[partes[0]]["type"] == "R":
-        funct3 = instrucoes[partes[0]]["funct3"]
-        funct7 = instrucoes[partes[0]].get("funct7", "0000000")
-        rd, rs1, rs2 = map(lambda x: int(x[1:]), partes[1:])
-        return f"{funct7:07b}{rs2:05b}{rs1:05b}{funct3}{rd:05b}{opcode}"
-    elif instrucoes[partes[0]]["type"] == "I":
-        funct3 = instrucoes[partes[0]]["funct3"]
-        rd, rs1, imm = map(lambda x: int(x[1:]), partes[1:])
-        imm_bin = format(imm, '012b') if imm >= 0 else format(2**12 + imm, '012b')
-        return f"{imm_bin}{rs1:05b}{funct3}{rd:05b}{opcode}"
-    elif instrucoes[partes[0]]["type"] == "S":
-        funct3 = instrucoes[partes[0]]["funct3"]
-        rs1, rs2, imm = map(lambda x: int(x[1:]), partes[1:])
-        imm_bin = format(imm, '012b')
-        return f"{imm_bin[0:7]}{rs2:05b}{rs1:05b}{funct3}{imm_bin[7:]}{opcode}"
-    elif instrucoes[partes[0]]["type"] == "SB":
-        funct3 = instrucoes[partes[0]]["funct3"]
-        rs1, rs2, label = map(lambda x: int(x[1:]), partes[1:])
-        offset = label - (int(partes[0]) + 4) // 2  # Calcula o offset em relação à próxima instrução
-        imm_bin = format(offset, '012b') if offset >= 0 else format(2**12 + offset, '012b')
-        return f"{imm_bin[0]}{imm_bin[2:8]}{rs2:05b}{rs1:05b}{funct3}{imm_bin[8:]}{imm_bin[1]}{opcode}"
-     """
-def traduzir_arquivo(nome_arquivo):
-    print("inicio traduzir arquivo")
-    with open(nome_arquivo, "r") as f:
-        linhas = f.readlines()
-    """     f = open(nome_arquivo, "r")
-    linhas = f.readlines() """
-    #print(f"linhas: {linhas}")
-    codigo_maquina = []
-    for linha in linhas:
-        if ":" in linha:  # Ignora rótulos
-            continue
-        print(f"linha: {linha}")
-        instrucao = linha.strip().split(',')[0]  # Remove comentários e parâmetros
-        codigo_maquina.append(traduzir_instrucao(instrucao))
-    return codigo_maquina
-
-
 def Traduz_Instrucao(linha):
     linha = linha.replace("(", " ").replace(")", " ").replace(" x", " ")
     linha = linha.replace(",", " ").split()
 
-    '''linha = [sub, 1, 2, 3]'''
-    '''linha = lh x1, 1(x2) = [lh, x1, 1, x2]'''
-    """a linha vai ser por ex a instruçao sub x1 x2 x3"""
+    #linha = [sub, 1, 2, 3]
+    #linha = lh x1, 1(x2) = [lh, x1, 1, x2]
+    #a linha vai ser por exemplo: a instrução "sub x6 x6 x5", se tornando "sub 6 6 5"
+
+    #Define o opcode e o funct3 a partir do dicionário de instruções, usando a instrução da linha como chave
     opcode = instrucoes[linha[0]]["opcode"]
     funct3 = instrucoes[linha[0]]["funct3"]
+
+
 
     if instrucoes[linha[0]]["type"] == "R":
 
@@ -96,27 +55,28 @@ def Traduz_Instrucao(linha):
             rd = linha[1]
             rs1 = linha[2]
             imm = linha[3]
-            #print(rd, rs1, imm)
+
             return f"{int(imm):012b}{int(rs1):05b}{funct3}{int(rd):05b}{opcode}"
         
         if funct3 == "001":
-            '''linha = lh x1, 1(x2) = [lh, 1, 1, 2]
-            rd é o primeiro registrador, rs1 é o segundo registrador e imm é o valor imediato entre eles (o 1)'''
+            #exemplo: linha = lh x1, 1(x2) = [lh, 1, 1, 2]
+            #rd é o primeiro registrador, rs1 é o segundo registrador e imm é o valor imediato entre eles (o 1)
             rd = linha[1]
             rs1 = linha[3]
             imm = linha[2]
             return f"{int(imm):012b}{int(rs1):05b}{funct3}{int(rd):05b}{opcode}"
         
     elif instrucoes[linha[0]]["type"] == "S":
-        '''linha = sh x1, 1(x2) = [sh, 1, 1, 2]'''
+        #linha = sh x1, 1(x2) = [sh, 1, 1, 2]
         funct3 = instrucoes[linha[0]]["funct3"]
         rs1 = linha[1]
         rs2 = linha[3]
         imm = linha[2]
 
         imm = format(int(imm), '012b')
-        '''divide o imediato'''
-        return f"{imm[5:12]}{int(rs2):05b}{int(rs1):05b}{funct3}{imm[0:5]}{opcode}"
+
+        #divide o imediato
+        return f"{imm[11:4:-1]}{int(rs1):05b}{int(rs2):05b}{funct3}{imm[:5]}{opcode}"
 
     elif instrucoes[linha[0]]["type"] == "SB":
         funct3 = instrucoes[linha[0]]["funct3"]
@@ -124,10 +84,11 @@ def Traduz_Instrucao(linha):
         rs2 = linha[2]
         label = linha[3]
 
-        '''''verifica se o label e positivo, se nao for ele converte o valor para binario em complemento de dois'''
+        # para melhor compreensão do codigo, o label foi definido como um numero inteiro
+        #verifica se o label e positivo, se nao for ele converte o valor para binario em complemento de dois
         label = f"{int(label):012b}" if int(label) >= 0 else format(2**12 + int(label), '012b')
 
-        '''''divide o offset como o imediato da instrucao'''
+        #divide o offset como o imediato da instrucao'''
         return f"{label[0]}{label[2:8]}{int(rs2):05b}{int(rs1):05b}{funct3}{label[8:]}{label[1]}{opcode}"
     else: 
         print("Instrução não implementada")
@@ -135,13 +96,16 @@ def Traduz_Instrucao(linha):
 
 def main():
 
+    #o arquivo de entrada precisa necessariamente ter o nome "teste.asm"
     if sys.argv[1][-4:] != ".asm":
         print("Formato de arquivo errado!")
         exit()    
 
+    #saida no terminal
     if len(sys.argv) == 2:
         out = "terminal"
-    elif len(sys.argv) == 3 and sys.argv[2] == "-o":
+    #saida em arquivo
+    elif len(sys.argv) == 4 and sys.argv[2] == "-o":
         out = "arquivo"
 
     try:
@@ -151,7 +115,7 @@ def main():
         exit()
 
 
-    #Favor nao tocar nisso pq ta funcionando depois de 1h 
+    #lê todas as linhas do arquivo de entrada
     lista_instrucoes = arq_entrada.readlines()
 
 
@@ -159,24 +123,25 @@ def main():
         print("Código de máquina RISC-V:")
     
     for linha in lista_instrucoes:
-        #print(linha)
+        #ignora os rotulos
         if ":" in linha or linha == "\n":
             continue
         linhabin = Traduz_Instrucao(linha)
 
         if out == "arquivo":
             try:
-                with open('arquivo_saida.txt', 'a') as arq_saida:
+                arquivo_saida = sys.argv[3]
+                arquivo_saida += ".txt"
+
+                with open(arquivo_saida, 'a') as arq_saida:
                     arq_saida.write(f"{linhabin}\n")
             except:
                 print("Nao foi possivel abrir o arquivo de saída!")
                 exit()
 
 
-            
         elif out == "terminal":
             print(linhabin)
-
 
 
 
