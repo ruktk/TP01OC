@@ -8,7 +8,17 @@ instrucoes = {
     "or": {"type": "R", "opcode": "0110011", "funct3": "110", "funct7": "0000000"},
     "andi": {"type": "I", "opcode": "0010011", "funct3": "111"},
     "srl": {"type": "R", "opcode": "0110011", "funct3": "101", "funct7": "0000000"},
-    "beq": {"type": "SB", "opcode": "1100011", "funct3": "000"}
+    "beq": {"type": "SB", "opcode": "1100011", "funct3": "000"},
+
+    # Instruções adicionais do ponto extra:  lw, sw, add, xor, and, sll
+    "sw": {"type": "S", "opcode": "0100011", "funct3": "010"},
+    "lw": {"type": "I", "opcode": "0000011", "funct3": "010"},
+    "add": {"type": "R", "opcode": "0110011", "funct3": "000", "funct7": "0000000"},
+    "xor": {"type": "R", "opcode": "0110011", "funct3": "100", "funct7": "0000000"},
+    "and": {"type": "R", "opcode": "0110011", "funct3": "111", "funct7": "0000000"},
+    "sll": {"type": "R", "opcode": "0110011", "funct3": "001", "funct7": "0000000"},
+    "li": {"type": "I", "opcode": "0010011", "funct3": "111"},
+    "mv": {"type": "I", "opcode": "0010011", "funct3": "000"},
 }
 
 def Traduz_Instrucao(linha):
@@ -23,33 +33,47 @@ def Traduz_Instrucao(linha):
     opcode = instrucoes[linha[0]]["opcode"]
     funct3 = instrucoes[linha[0]]["funct3"]
 
-
-
     if instrucoes[linha[0]]["type"] == "R":
+            funct7 = instrucoes[linha[0]]["funct7"]
+            rd = linha[1]
+            rs1 = linha[2]
+            rs2 = linha[3]
+            return f"{funct7}{int(rs2):05b}{int(rs1):05b}{funct3}{int(rd):05b}{opcode}"
 
-        if funct3 == "000":
-            funct7 = instrucoes[linha[0]]["funct7"]
-            rd = linha[1]
-            rs1 = linha[2]
-            rs2 = linha[3]
-            return f"{funct7}{int(rs2):05b}{int(rs1):05b}{funct3}{int(rd):05b}{opcode}"
-        
-        elif funct3 == "110":
+    #   PONTO EXTRA: pseudo instrução "li"
 
-            funct7 = instrucoes[linha[0]]["funct7"]
-            rd = linha[1]
-            rs1 = linha[2]
-            rs2 = linha[3]
-            return f"{funct7}{int(rs2):05b}{int(rs1):05b}{funct3}{int(rd):05b}{opcode}"
-        
-        elif funct3 == "101":
-            funct7 = instrucoes[linha[0]]["funct7"]
-            rd = linha[1]
-            rs1 = linha[2]
-            rs2 = linha[3]
-            return f"{funct7}{int(rs2):05b}{int(rs1):05b}{funct3}{int(rd):05b}{opcode}"
-        
+    elif instrucoes[linha[0]] == "li":
+        #a instrução li é uma pseudo instrução que carrega um valor imediato
+        # para um registrador, de forma similar a addi
+        #li x1, 1 = addi x1 x0 1
+        #li x1, 1 = [li, x1, 1]
+        #addi x1 x0 1 = [addi, x1, x0, 1]
+        #li x1, 1 = [addi, x1, x0, 1]
+        funct7 = instrucoes["add"]["funct7"]
+        rd = linha[1]
+        rs1 = "0"
+        imm = linha[2]
+        return f"{int(imm):012b}{int(rs1):05b}{funct3}{int(rd):05b}{opcode}"
+
+    #  PONTO EXTRA: pseudo instrução "mv"
+    
+    elif instrucoes[linha[0]] == "mv":
+        #a instrução mv é uma pseudo instrução semelhante a li, 
+        #tendo o seu processo invertido
+        #ao invés de adicionar um valor imediato a um registrador, 
+        #ela copia o valor de um registrador para outro
+        #mv x1, x2 = addi x1 x2 0
+        #mv x1, x2 = [mv, x1, x2]
+        #addi x1 x2 0 = [addi, x1, x2, 0]
+        #mv x1, x2 = [addi, x1, x2, 0]
+        funct7 = instrucoes["add"]["funct7"]
+        rd = linha[1]
+        rs1 = linha[2]
+        imm = "0"
+        return f"{int(imm):012b}{int(rs1):05b}{funct3}{int(rd):05b}{opcode}"
+
     elif instrucoes[linha[0]]["type"] == "I":
+    
 
         if funct3 == "111":
             rd = linha[1]
@@ -65,6 +89,13 @@ def Traduz_Instrucao(linha):
             rs1 = linha[3]
             imm = linha[2]
             return f"{int(imm):012b}{int(rs1):05b}{funct3}{int(rd):05b}{opcode}"
+        
+        if funct3 == "010":
+            rd = linha[1]
+            rs1 = linha[3]
+            imm = linha[2]
+            return f"{int(imm):012b}{int(rs1):05b}{funct3}{int(rd):05b}{opcode}"
+        
         
     elif instrucoes[linha[0]]["type"] == "S":
         #linha = sh x1, 1(x2) = [sh, 1, 1, 2]
@@ -147,4 +178,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
